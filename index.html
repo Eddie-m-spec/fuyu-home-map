@@ -1,0 +1,1040 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>扶余城区选房位置参考图</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f7f3ea;
+      --paper: #fffdf8;
+      --ink: #24302f;
+      --muted: #6d756f;
+      --line: #cfc5b3;
+      --road: #a9a396;
+      --rail: #6b7280;
+      --home: #2563eb;
+      --daily: #d97706;
+      --park: #16803c;
+      --school: #7c3aed;
+      --transit: #0f766e;
+      --health: #dc2626;
+      --landmark: #8b5e34;
+      --zone: #fde68a;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+      line-height: 1.45;
+    }
+    .page {
+      max-width: 1180px;
+      margin: 0 auto;
+      padding: 22px;
+    }
+    h1 {
+      margin: 0;
+      font-size: 24px;
+      font-weight: 650;
+    }
+    .sub {
+      color: var(--muted);
+      margin: 6px 0 18px;
+      max-width: 860px;
+    }
+    .layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 340px;
+      gap: 16px;
+      align-items: start;
+    }
+    .panel {
+      background: var(--paper);
+      border: 1px solid #ded5c5;
+      border-radius: 10px;
+      box-shadow: 0 8px 24px rgba(52, 43, 31, 0.08);
+    }
+    .map-panel {
+      overflow: hidden;
+    }
+    svg {
+      display: block;
+      width: 100%;
+      height: auto;
+      min-height: 560px;
+      touch-action: none;
+      cursor: grab;
+    }
+    svg.is-dragging { cursor: grabbing; }
+    .side {
+      padding: 14px;
+      position: sticky;
+      top: 12px;
+    }
+    .side h2 {
+      margin: 0 0 8px;
+      font-size: 17px;
+    }
+    .detail {
+      min-height: 150px;
+      padding: 12px;
+      border-radius: 8px;
+      background: #f9f4e9;
+      border: 1px solid #e7dcc8;
+    }
+    .controls {
+      margin: 12px 0 14px;
+      padding: 12px;
+      border: 1px solid #e7dcc8;
+      border-radius: 8px;
+      background: #fbf7ee;
+    }
+    .control-title {
+      font-weight: 650;
+      margin: 0 0 8px;
+      font-size: 15px;
+    }
+    .scale-row {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 10px;
+      align-items: center;
+      color: var(--muted);
+      font-size: 14px;
+      margin-bottom: 10px;
+    }
+    input[type="range"] {
+      width: 100%;
+      accent-color: var(--home);
+    }
+    .button-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin: 10px 0;
+    }
+    button {
+      appearance: none;
+      border: 1px solid #cfc5b3;
+      border-radius: 7px;
+      background: #fffaf0;
+      color: var(--ink);
+      padding: 7px 10px;
+      font: inherit;
+      cursor: pointer;
+    }
+    button:hover {
+      border-color: #9f8f76;
+      background: #fff3d8;
+    }
+    .check-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 7px 10px;
+      margin-top: 8px;
+    }
+    .check-row {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+    .check-row input {
+      accent-color: var(--home);
+    }
+    .divider {
+      border: 0;
+      border-top: 1px solid #e7dcc8;
+      margin: 12px 0;
+    }
+    .distance-list {
+      display: grid;
+      gap: 6px;
+      margin-top: 8px;
+    }
+    .distance-row {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 8px;
+      align-items: center;
+      padding: 6px 8px;
+      border-radius: 6px;
+      background: #fffaf0;
+      border: 1px solid #eadfcd;
+      font-size: 13px;
+    }
+    .distance-row strong { white-space: nowrap; }
+    .distance-note {
+      color: var(--muted);
+      font-size: 12px;
+      margin-top: 7px;
+    }
+    .detail-title {
+      font-weight: 650;
+      margin-bottom: 4px;
+    }
+    .detail-meta {
+      color: var(--muted);
+      font-size: 13px;
+      margin-bottom: 8px;
+    }
+    .detail-action {
+      margin-top: 10px;
+      padding: 6px 9px;
+      font-size: 13px;
+    }
+    .analysis-block {
+      margin-top: 12px;
+    }
+    .analysis-heading {
+      font-size: 13px;
+      font-weight: 650;
+      margin-bottom: 5px;
+    }
+    .analysis-list {
+      margin: 0;
+      padding-left: 18px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+    .analysis-list li { margin: 5px 0; }
+    .analysis-list.pros li::marker { color: #16803c; }
+    .analysis-list.cons li::marker { color: #dc2626; }
+    .analysis-list.check li::marker { color: #2563eb; }
+    .legend {
+      display: grid;
+      gap: 8px;
+      margin: 14px 0;
+    }
+    .legend span {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+    .dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      display: inline-block;
+      border: 2px solid #fffdf8;
+    }
+    .home { background: var(--home); }
+    .daily { background: var(--daily); }
+    .park { background: var(--park); }
+    .school { background: var(--school); }
+    .transit { background: var(--transit); }
+    .health { background: var(--health); }
+    .landmark { background: var(--landmark); }
+    .tips {
+      color: var(--muted);
+      font-size: 14px;
+      margin: 0;
+      padding-left: 18px;
+    }
+    .tips li { margin: 6px 0; }
+    .road {
+      fill: none;
+      stroke: var(--road);
+      stroke-width: 4;
+      stroke-linecap: round;
+      opacity: 0.75;
+    }
+    .rail {
+      fill: none;
+      stroke: var(--rail);
+      stroke-width: 3;
+      stroke-dasharray: 10 8;
+      opacity: 0.78;
+    }
+    .distance-line {
+      stroke-width: 2;
+      stroke-dasharray: 5 5;
+      opacity: 0.42;
+      pointer-events: none;
+    }
+    .grid {
+      stroke: #e6dece;
+      stroke-width: 1;
+    }
+    .park-area {
+      fill: rgba(22, 128, 60, 0.14);
+      stroke: rgba(22, 128, 60, 0.55);
+      stroke-width: 2;
+    }
+    .zone {
+      fill: rgba(253, 230, 138, 0.45);
+      stroke: rgba(217, 119, 6, 0.55);
+      stroke-width: 2;
+      stroke-dasharray: 7 6;
+    }
+    .label, .road-label {
+      font-size: 15px;
+      paint-order: stroke;
+      stroke: var(--paper);
+      stroke-width: 5px;
+      stroke-linejoin: round;
+      fill: var(--ink);
+    }
+    .road-label {
+      font-size: 13px;
+      fill: var(--muted);
+    }
+    .marker {
+      cursor: pointer;
+    }
+    .marker circle:first-child {
+      stroke: var(--paper);
+      stroke-width: 3;
+    }
+    .marker.approx circle:first-child {
+      stroke-dasharray: 4 3;
+      opacity: 0.78;
+    }
+    .marker:hover circle:first-child,
+    .marker.active circle:first-child {
+      stroke: #111827;
+      stroke-width: 4;
+    }
+    .marker.selected-home circle:first-child {
+      stroke: #111827;
+      stroke-width: 4;
+    }
+    .north, .scale {
+      fill: var(--ink);
+      font-size: 13px;
+    }
+    .foot {
+      margin-top: 12px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+    select {
+      width: 100%;
+      min-height: 40px;
+      margin-top: 6px;
+      padding: 7px 9px;
+      border: 1px solid #cfc5b3;
+      border-radius: 7px;
+      background: #fffaf0;
+      color: var(--ink);
+      font: inherit;
+    }
+    @media (max-width: 900px) {
+      .layout { grid-template-columns: 1fr; }
+      .side { position: static; }
+      svg { min-height: 520px; }
+    }
+    @media (max-width: 600px) {
+      .page { padding: 12px; }
+      h1 { font-size: 21px; }
+      .sub { font-size: 14px; margin-bottom: 12px; }
+      .layout { gap: 10px; }
+      svg { min-height: 470px; }
+      .side { padding: 10px; }
+      .check-grid { grid-template-columns: 1fr; }
+      .button-row button { flex: 1 1 calc(50% - 8px); min-height: 42px; }
+      .detail { min-height: 138px; }
+      .label { font-size: 13px; }
+      .road-label { font-size: 11px; }
+      .foot { font-size: 12px; }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <h1>扶余城区选房位置参考图</h1>
+    <p class="sub">这张图用于提前理解几个候选小区与买菜、散步、学校、车站、医疗方向的大致关系。可拖住地图空白处平移，也可点击点位后将它移到中心。虚线标记表示公开精确坐标不足，是“生活圈/约略位置”，看房时请用手机地图和实地楼栋入口再次核对。</p>
+
+    <section class="layout">
+      <div class="panel map-panel">
+        <svg id="map" viewBox="0 0 980 650" role="img" aria-label="扶余市城区选房点位示意图">
+          <rect x="0" y="0" width="980" height="650" fill="#fffdf8"></rect>
+          <g id="grid"></g>
+          <g id="areas"></g>
+          <g id="roads"></g>
+          <g id="distance-lines"></g>
+          <g id="points"></g>
+          <g transform="translate(900 38)" class="north">
+            <path d="M0 34 L17 0 L34 34 L17 25 Z"></path>
+            <text x="17" y="54" text-anchor="middle">北</text>
+          </g>
+          <g transform="translate(34 610)" class="scale">
+            <line x1="0" y1="0" x2="90" y2="0" stroke="#24302f" stroke-width="3"></line>
+            <line x1="0" y1="-7" x2="0" y2="7" stroke="#24302f" stroke-width="3"></line>
+            <line x1="90" y1="-7" x2="90" y2="7" stroke="#24302f" stroke-width="3"></line>
+            <text x="45" y="-12" text-anchor="middle">约 1 公里</text>
+          </g>
+        </svg>
+      </div>
+
+      <aside class="panel side">
+        <h2>点位说明</h2>
+        <div class="detail" id="detail">
+          <div class="detail-title">点击地图上的圆点</div>
+          <div class="detail-meta">推荐先看文化公园/惠民路生活圈、隆昌花园二期周边、樱花苑周边。</div>
+          <div>地图主要帮助判断“老人日常活动半径”，不是精确导航图。</div>
+        </div>
+
+        <div class="controls" aria-label="地图筛选和比例控制">
+          <div class="control-title">比例与筛选</div>
+          <label class="scale-row">
+            <span>地图放大倍率</span>
+            <strong id="zoom-value">1.00x</strong>
+          </label>
+          <input id="zoom-range" type="range" min="0.75" max="10" step="0.05" value="1">
+
+          <div class="button-row">
+            <button id="show-all" type="button">显示全部</button>
+            <button id="homes-only" type="button">只看小区</button>
+            <button id="reset-view" type="button">重置比例</button>
+          </div>
+
+          <hr class="divider">
+          <div class="control-title">生活场景</div>
+          <div class="check-grid" id="type-controls"></div>
+
+          <hr class="divider">
+          <div class="control-title">候选小区</div>
+          <div class="check-grid" id="home-controls"></div>
+
+          <hr class="divider">
+          <div class="control-title">距离参考</div>
+          <label class="check-row" for="distance-home">起点小区</label>
+          <select id="distance-home" aria-label="选择起点小区"></select>
+          <div class="check-grid" id="distance-controls"></div>
+          <div class="distance-list" id="distance-list" aria-live="polite"></div>
+          <div class="distance-note">显示的是两点直线距离，不是步行路线距离。道路距离通常会更长。</div>
+        </div>
+
+        <div class="legend">
+          <span><i class="dot home"></i>推荐小区</span>
+          <span><i class="dot daily"></i>买菜/购物</span>
+          <span><i class="dot park"></i>公园散步</span>
+          <span><i class="dot school"></i>学校/人气</span>
+          <span><i class="dot transit"></i>公交/车站</span>
+          <span><i class="dot health"></i>医疗方向</span>
+          <span><i class="dot landmark"></i>重要地标</span>
+        </div>
+
+        <ul class="tips">
+          <li>老人房优先看电梯稳定、低/中低楼层、冬季清雪和供暖。</li>
+          <li>离学校、市场近说明人气足，也要现场感受噪音和停车。</li>
+          <li>医院点位是方向参考，建议实测打车时间和冬季路线。</li>
+        </ul>
+      </aside>
+    </section>
+
+    <p class="foot">坐标参考：OpenStreetMap、城市吧公开地图页、POI86 公开 POI 页；阳光北岸、福地华庭、文化公园生活圈为公开房源描述推断的约略片区。</p>
+  </main>
+
+  <script>
+    const W = 980;
+    const H = 650;
+    const lonMin = 126.014;
+    const lonMax = 126.055;
+    const latMin = 44.975;
+    const latMax = 45.000;
+
+    const typeName = {
+      home: "推荐小区",
+      daily: "买菜/购物",
+      park: "公园散步",
+      school: "学校/人气",
+      transit: "公交/车站",
+      health: "医疗方向",
+      landmark: "重要地标"
+    };
+    const typeColor = {
+      home: "var(--home)",
+      daily: "var(--daily)",
+      park: "var(--park)",
+      school: "var(--school)",
+      transit: "var(--transit)",
+      health: "var(--health)",
+      landmark: "var(--landmark)"
+    };
+
+    const points = [
+      {name:"恒信阳光北岸", type:"home", lon:126.0262, lat:44.9905, confidence:"约略住宅片区", why:"公开房源常描述在文化公园附近，适合重点看散步、采光、供暖和电梯维护。"},
+      {name:"福地华庭", type:"home", lon:126.0248, lat:44.9891, confidence:"约略住宅片区", why:"同属公园生活圈候选，适合老人日常散步；看房时重点核实物业、楼道和冬季清雪。"},
+      {name:"隆昌花园二期", type:"home", lon:126.0277, lat:44.9869, confidence:"公开周边 POI 交叉定位", why:"周边有实验小学、果蔬超市、公交站和惠民路，生活配套密集，但要注意学校和主路噪音。"},
+      {name:"樱花苑", type:"home", lon:126.0271, lat:44.9773, confidence:"公交站点定位", why:"靠近公交生活圈，适合看低楼层或电梯房；相对更偏南，需实测买菜和就医路线。"},
+      {name:"龙嘉花园", type:"home", lon:126.0348, lat:44.9805, confidence:"周边 POI 推断", why:"生活便利性可作为备选；如果是多层高楼层，不建议老人长期居住。"},
+      {name:"盛德御景", type:"home", lon:126.0382, lat:44.9893, confidence:"惠民路附近约略定位", why:"公开资料显示小区在惠民路，周边与锦江富苑、阳光北岸、福地华庭等生活圈有较明确的相对关系；精确楼栋位置请现场核对。"},
+      {name:"锦江富苑", type:"home", lon:126.0328, lat:44.9892, confidence:"相对方位约略定位", why:"公开房产资料显示其位于盛德御景西侧约460米，适合把它作为惠民路生活圈的对比小区。"},
+      {name:"鼎浩米兰花都", type:"home", lon:126.0353, lat:44.9848, confidence:"一中/士英街生活圈约略定位", why:"公开资料将其描述为扶余一中附近、士英街社区一带，底商有生鲜超市，日常买菜便利性值得实地核实。"},
+      {name:"东悦名苑", type:"home", lon:126.0405, lat:44.9798, confidence:"公开企业地址约略定位", why:"公开企业登记能确认小区位于扶余市士英街道，但未找到稳定的精确地图坐标；图上只用于判断新区相对位置。"},
+      {name:"龙嘉熙悦府（和悦府）", type:"home", lon:126.0378, lat:44.9814, confidence:"公开楼盘列表约略定位", why:"公开房产平台将其列为扶余城区楼盘，名称有“龙嘉熙悦府/龙嘉和悦府”的不同写法；买房前请按预售证或不动产权证核对正式项目名。"},
+      {name:"扶余市第一中学", type:"school", lon:126.03584, lat:44.98448, confidence:"公开地图坐标", why:"公开地址为新区育才街与振瀛大路交叉路口西北约150米。学校周边通常人气和公交较集中，实地看房要留意上下学时段噪音。"},
+      {name:"扶余市第四中学", type:"school", lon:126.0287, lat:44.9924, confidence:"城区约略位置", why:"公开资料可确认地址为扶余市三岔河镇东北街，但未找到同等可靠的精确坐标；地图仅用于判断大致生活圈，现场请再次核对。"},
+      {name:"扶余市人民政府", type:"landmark", lon:126.0315, lat:44.9934, confidence:"地址方向约略标记", why:"公开地址为春华路789号，属于城区重要公共服务地标；标记用于判断与候选小区的相对位置。"},
+      {name:"扶余公园", type:"park", lon:126.0476, lat:44.9969, confidence:"OSM 公开点位", why:"城区偏东的大公园，适合散步休闲，但离多数 30 万内候选房源有一定距离。"},
+      {name:"文化公园/惠民路生活圈", type:"park", lon:126.0267, lat:44.9896, confidence:"生活圈约略区域", why:"阳光北岸、福地华庭等推荐逻辑主要看重这里的散步和日常活动便利性。"},
+      {name:"旺辉果蔬超市", type:"daily", lon:126.0264, lat:44.9896, confidence:"城市吧公开点位换算", why:"代表隆昌花园二期附近买菜便利度，老人冬季步行买菜可重点参考。"},
+      {name:"市场头/二路市场方向", type:"daily", lon:126.0248, lat:44.9844, confidence:"城市吧公交点位换算", why:"传统商业和公交交汇位置，买菜办事方便，但车流、人流和噪音也要现场感受。"},
+      {name:"购物中心/商贸步行街", type:"daily", lon:126.0237, lat:44.9834, confidence:"城市吧公开点位换算", why:"商业集中，日常购物方便；老人居住要避开过吵、停车混乱的楼栋。"},
+      {name:"扶余县实验小学", type:"school", lon:126.0271, lat:44.9854, confidence:"城市吧公开点位换算", why:"学校附近通常人气足、配套多；也要避开上下学噪音和临街拥堵。"},
+      {name:"扶余站", type:"transit", lon:126.0184, lat:44.9851, confidence:"OSM 公开点位", why:"老人与子女探亲、去外地就医时有用；离车站太近也可能有噪音和人流。"},
+      {name:"扶余客运站", type:"transit", lon:126.0190, lat:44.9824, confidence:"城市吧公开点位换算", why:"县域出行方便，适合需要经常坐客车的老人，但不宜买紧贴车站的嘈杂房源。"},
+      {name:"德卡步行街公交点", type:"transit", lon:126.0217, lat:44.9839, confidence:"城市吧公开点位换算", why:"公交和商业活动较集中，适合判断市中心出行便利性。"},
+      {name:"士英号公交点", type:"transit", lon:126.0278, lat:44.9844, confidence:"城市吧公开点位换算", why:"靠近实验小学、隆昌花园二期一带，老人日常公交出行可参考。"},
+      {name:"人民医院方向", type:"health", lon:126.0370, lat:44.9860, confidence:"地址方向标记，需现场核实", why:"老人选房要实测从小区到医院打车和步行时间；这个点只表示医疗方向，不代表院门精确位置。"},
+      {name:"扶余市中医院方向", type:"health", lon:126.0338, lat:44.9902, confidence:"地址方向标记，需现场核实", why:"作为城区医疗参考点加入；具体院门、挂号入口和夜间急诊路线请现场或手机地图核实。"}
+    ];
+
+    const homeAnalysis = {
+      "恒信阳光北岸": {
+        pros: [
+          "公开房源多次描述靠近文化公园，老人散步、晒太阳和日常活动更有空间。",
+          "处在惠民路生活圈候选范围，买菜、药店和公交便利性值得优先实测。",
+          "如果选到有电梯、南向、中低楼层的房源，适老性会比较均衡。"
+        ],
+        cons: [
+          "小区精确楼栋和单元位置需要现场核对，不能只按“文化公园附近”判断。",
+          "靠近公园和生活道路的楼栋，可能有人流、广场活动或晚间噪音。",
+          "公开资料不足以确认供暖质量和物业管理水平，不能默认“新/电梯房”就一定舒适。"
+        ],
+        check: [
+          "供暖：问供热单位、取暖费、去年冬季最低室温；重点看窗边、墙角和卫生间是否冷。",
+          "采光：上午和下午各看一次，确认南向卧室是否被前楼遮挡，冬至前后日照更关键。",
+          "物业：问电梯故障报修时长、楼道清雪、垃圾清运、门禁和夜间照明。",
+          "老人生活：从拟买楼栋步行到果蔬店、药店、公园，实测是否有台阶、积水和结冰路段。",
+          "楼层户型：优先2—6层或电梯中低楼层；卫生间要能安装扶手，卧室到卫生间不绕路。"
+        ]
+      },
+      "福地华庭": {
+        pros: [
+          "公开房源常把它与文化公园生活圈联系起来，适合喜欢散步、安静休闲的老人。",
+          "距离隆昌花园二期、实验小学和惠民路生活轴不远，生活配套可以连片比较。",
+          "两室户型如果朝向和楼层合适，老人住一间、留一间给子女或照护人员比较实用。"
+        ],
+        cons: [
+          "小区精确坐标、楼栋朝向和电梯覆盖情况需要逐栋确认。",
+          "靠近学校、生活道路的楼栋，早晚高峰可能有接送车、人声和停车影响。",
+          "如果房屋面积偏大，取暖、物业和日常打扫负担也会随之增加。"
+        ],
+        check: [
+          "供暖：查看上一采暖季邻居反馈，现场摸暖气片并看室内温度记录，不只听中介口头承诺。",
+          "采光：重点看客厅和主卧冬季日照，询问前楼间距、是否有临时加建或大树遮挡。",
+          "物业：看楼道扶手、电梯轿厢、单元门闭合、保洁和小区积雪清理情况。",
+          "老人生活：确认公园入口是否真正步行可达，买菜路线是否需要穿过车流较大的道路。",
+          "安全便利：看夜间照明、门禁、快递堆放、地面防滑和物业应急电话是否醒目。"
+        ]
+      },
+      "隆昌花园二期": {
+        pros: [
+          "公开点位显示附近有实验小学、旺辉果蔬超市、惠民路和公交站，日常买菜、出行更容易形成短距离生活圈。",
+          "周边人气和商户密度较高，老人独居时买药、吃饭、寻求邻里帮助相对方便。",
+          "靠近公交生活轴，家属探望或老人去医院、车站时更容易安排路线。"
+        ],
+        cons: [
+          "学校、商业和公交集中也意味着上下学时段、早晚高峰可能更吵、更拥堵。",
+          "临主路或商铺楼栋可能有车辆鸣笛、油烟、装卸货和夜间经营噪音。",
+          "人流多的区域要重点看单元门禁、电动车停放和冬天楼门口结冰。"
+        ],
+        check: [
+          "供暖：分别查看临街房、边户和中间户的室温，询问顶楼、底楼是否有额外偏冷问题。",
+          "采光：避开被商业楼、学校建筑或高层住宅遮挡的低楼层；看房时间不要只选中午。",
+          "物业：现场看保洁、垃圾桶距离、下水异味、电梯维护和停车秩序。",
+          "老人生活：从楼门到旺辉果蔬超市、公交站、药店分别计时，观察是否连续有人行道。",
+          "噪音取舍：喜欢热闹可选靠配套一侧，但老人睡眠敏感时优先选小区内部、远离校门和商铺的楼栋。"
+        ]
+      },
+      "樱花苑": {
+        pros: [
+          "公开公交点位以樱花苑命名，公交识别度较高，适合需要经常坐车的老人。",
+          "相对独立的居住片区可能比商业核心更安静，适合喜欢清静的老人。",
+          "如果能买到低楼层或电梯房，日常出门、取快递和冬天应急会更轻松。"
+        ],
+        cons: [
+          "位置相对偏南，买菜、药店、医院和公园是否方便不能凭小区名判断，要实测路线。",
+          "部分公开房源可能是高层，老人应谨慎考虑11层以上、顶楼和单一电梯楼栋。",
+          "公交便利不等于下楼便利，仍需看站点到单元门的距离、过街安全和冬季积雪。"
+        ],
+        check: [
+          "供暖：重点看端户、顶楼、底楼和靠外墙房间；询问停暖维修、室温投诉处理和包烧费。",
+          "采光：南向房要看前方楼间距，低楼层要注意冬季太阳高度低时是否被遮挡。",
+          "物业：确认电梯是否双梯、是否有备用电源，物业夜间值守和清雪响应是否稳定。",
+          "老人生活：从小区到最近菜店、公交站、卫生室/药店走一遍，记录是否需要长距离步行。",
+          "居住安全：确认卫生间干湿分离、防滑、燃气报警和阳台封闭情况。"
+        ]
+      },
+      "龙嘉花园": {
+        pros: [
+          "位于城区生活范围内，适合把商业、学校、公交和周边老小区配套一起比较。",
+          "公开资料显示周边有学校类点位，生活人气和日常商户可能相对集中。",
+          "如果选到一楼或低楼层，老人上下楼压力小，也方便搬运米面和取暖用品。"
+        ],
+        cons: [
+          "多层房源如果位于4—6层且无电梯，对腿脚不便的老人不友好。",
+          "新区或主干路附近的楼栋可能存在风大、车流、施工和停车秩序变化。",
+          "公开资料对物业和供暖缺少稳定信息，需要通过物业和邻居交叉核实。"
+        ],
+        check: [
+          "供暖：多问同楼不同户型住户，确认边户、顶楼和一楼是否普遍偏冷。",
+          "采光：低楼层重点看前楼、围墙和树木遮挡；冬季下午也要看一次。",
+          "物业：无电梯小区重点看楼道灯、扶手、清雪、防盗门和公共区域维修。",
+          "老人生活：测到菜市场/超市、药店和公交站的步行时间，确认冬天是否有连续除雪路面。",
+          "楼层决策：除非老人身体很好，否则把无电梯4楼以上列为低优先级。"
+        ]
+      },
+      "盛德御景": {
+        pros: [
+          "公开资料显示在惠民路附近，能与锦江富苑、阳光北岸、福地华庭放在同一生活圈比较。",
+          "惠民路生活轴更适合观察买菜、商户、公交和家政服务的集中程度。",
+          "如果楼栋远离主路、卧室朝南且物业维护稳定，可能兼顾便利和居住舒适度。"
+        ],
+        cons: [
+          "公开精确坐标不足，不能仅凭地图判断与公园、医院或菜市场的真实步行距离。",
+          "惠民路沿线生活方便，但临街楼栋可能有车流、商铺和停车噪音。",
+          "物业、电梯、供暖和小区内部绿化目前没有足够可靠的公开资料支撑。"
+        ],
+        check: [
+          "供暖：必须问物业和同楼住户室温，查看暖气片、窗台冷凝水、墙角返潮和管道维修记录。",
+          "采光：优先看南向中间户，确认楼间距和前方是否有后续建设可能。",
+          "物业：看电梯年检、门禁、监控、保洁、垃圾清运和冬季道路清雪是否有专人负责。",
+          "老人生活：从楼门实测到果蔬店、药店和公园入口，不要按小区到道路直线距离估计。",
+          "合同核验：核对小区正式名称、楼栋、产权证和物业公司名称，防止同名或宣传名混淆。"
+        ]
+      },
+      "锦江富苑": {
+        pros: [
+          "公开房产资料显示与盛德御景相邻，可作为惠民路生活圈的横向比较对象。",
+          "相对靠近城区生活轴，买菜、公交和家属探望的便利性值得实测。",
+          "适合重点比较同价位下的楼龄、户型朝向、物业费和实际室温，而不是只看小区名。"
+        ],
+        cons: [
+          "目前公开信息更多是相对位置描述，精确入口和内部配套需要现场确认。",
+          "若临惠民路或商业界面，可能会有道路噪音、停车和商铺经营影响。",
+          "如果楼栋间距小或前方有高层，低楼层采光可能不如地图上看起来。"
+        ],
+        check: [
+          "供暖：分别看客厅、主卧和卫生间温度，向住户询问是否有年年偏冷的楼栋。",
+          "采光：在上午和下午查看窗户朝向、遮挡和日照时长，重点关注老人常住卧室。",
+          "物业：核实物业费包含的服务，查看楼道、电梯、门禁、公共照明和积雪清理。",
+          "老人生活：问清最近买菜点和药店，最好选择出门后不需要横穿主干路的单元。",
+          "居住安静度：晚上7—9点和早晨7—8点各看一次，判断商业和交通噪音。"
+        ]
+      },
+      "鼎浩米兰花都": {
+        pros: [
+          "公开资料将其与扶余一中、士英街社区联系起来，学校和新区生活配套的人气较明确。",
+          "公开描述提到底商或周边有生鲜超市，对老人买菜、买水和应急采购有帮助。",
+          "靠近一中方向，家属乘公交或到新区办事时可顺路，但仍需实测站点距离。"
+        ],
+        cons: [
+          "学校和底商带来便利，也可能带来上下学噪音、商铺油烟和停车拥堵。",
+          "新区部分路段可能存在施工、空地或季节性风沙，现场环境比宣传图更重要。",
+          "公开资料对物业、供暖和楼栋采光缺乏统一口径，不能只按楼盘名称判断品质。"
+        ],
+        check: [
+          "供暖：看底商上方住宅、边户和高层的温度差，问是否有商住混合导致的管线或噪音问题。",
+          "采光：重点看主卧是否朝南、前方是否有学校建筑或高层遮挡，观察冬季低角度阳光。",
+          "物业：确认底商垃圾、油烟、夜间装卸是否由物业管理，查看电梯和单元门卫生。",
+          "老人生活：验证生鲜超市营业时间、价格和到楼门的真实距离，看看冬季是否方便推车。",
+          "安静需求：老人睡眠浅时不要选紧贴校门、底商、主路或快递集中点的房源。"
+        ]
+      },
+      "东悦名苑": {
+        pros: [
+          "位于士英街道方向，适合与一中、米兰花都、龙嘉花园等新区候选一起比较。",
+          "新区住宅若楼间距较大，理论上更有机会获得较好采光和通风，但必须现场验证。",
+          "适合重视新环境、道路相对宽敞和家属开车探望的家庭。"
+        ],
+        cons: [
+          "公开精确坐标不足，买菜、公园、医院和公交的真实距离不宜按当前约略点位下结论。",
+          "新区配套可能仍在完善，老人日常需要的药店、菜店、维修和社区服务要逐项确认。",
+          "若周边存在待开发地块，短期内可能有施工噪音、扬尘和道路变化。"
+        ],
+        check: [
+          "供暖：新小区也要看实际入住率和首个采暖季反馈，问清供热单位、包烧费和维修责任。",
+          "采光：现场确认楼间距、楼栋朝向、前方空地规划和老人卧室的冬季日照。",
+          "物业：核实物业公司、门禁、监控、电梯品牌/维保、垃圾清运和地下车库管理。",
+          "老人生活：从小区走到最近菜店、药店和公交站，记录夜间照明、路面和过街条件。",
+          "交付核验：核对项目正式名称、预售证/不动产权证、交付状态和物业费标准。"
+        ]
+      },
+      "龙嘉熙悦府（和悦府）": {
+        pros: [
+          "属于城区楼盘候选，适合和龙嘉花园、米兰花都、一中方向一起考察生活圈。",
+          "如果是较新的电梯住宅，户型、无障碍和公共区域条件可能更容易做适老改造。",
+          "适合把物业服务、供暖稳定性、楼间距和入住率作为核心比较指标。"
+        ],
+        cons: [
+          "公开资料存在“龙嘉熙悦府/龙嘉和悦府”不同写法，项目正式名称和位置必须按证件核对。",
+          "新盘或入住率不足的小区，周边菜店、药店、邻里照应和公交班次可能还不成熟。",
+          "高层电梯房要考虑停电、电梯检修、冬季出行和老人独居时的应急问题。"
+        ],
+        check: [
+          "供暖：问物业和已入住住户首个冬季室温，确认供热方式、缴费标准和停暖报修机制。",
+          "采光：看主卧日照、楼间距和前方规划，不能只看样板间或沙盘。",
+          "物业：重点看电梯维保、门禁、监控、保洁、积雪清理、应急呼叫和物业响应速度。",
+          "老人生活：确认最近菜市场/超市、药店、公交站和公园，测步行路线是否平整连续。",
+          "合同核验：把项目正式名称、楼栋、交付标准、物业费、取暖费和维修责任写进购房核对清单。"
+        ]
+      }
+    };
+
+    const roads = [
+      {name:"三岔河大街/客运站方向", coords:[[126.016,44.9822],[126.021,44.9826],[126.030,44.9834],[126.042,44.9844]]},
+      {name:"商贸步行街/工商路生活轴", coords:[[126.020,44.9841],[126.0248,44.9844],[126.0278,44.9844],[126.036,44.9848]]},
+      {name:"惠民路生活轴", coords:[[126.023,44.9890],[126.0264,44.9896],[126.0284,44.9893],[126.031,44.9888]]},
+      {name:"士英街", coords:[[126.0276,44.9770],[126.0278,44.9844],[126.0277,44.9906]]},
+      {name:"通达街/车站轴", coords:[[126.0185,44.9818],[126.0199,44.9842],[126.0204,44.9872]]}
+    ];
+    const rail = [[126.014,44.9831],[126.0184,44.9851],[126.026,44.9852],[126.036,44.9856],[126.052,44.9863]];
+    const parkArea = [[126.044,44.9947],[126.0505,44.9949],[126.051,44.999],[126.045,44.9992]];
+    const state = {
+      zoom: 1,
+      pan: {x: 0, y: 0},
+      selectedPoint: null,
+      selectedHome: "恒信阳光北岸",
+      typeVisible: {home:true, daily:true, park:true, school:true, transit:true, health:true},
+      distanceTypeVisible: {daily:true, park:true, school:true, transit:true, health:true, landmark:true},
+      homeVisible: {
+        "恒信阳光北岸": true,
+        "福地华庭": true,
+        "隆昌花园二期": true,
+        "樱花苑": true,
+        "龙嘉花园": true,
+        "盛德御景": true,
+        "锦江富苑": true,
+        "鼎浩米兰花都": true,
+        "东悦名苑": true,
+        "龙嘉熙悦府（和悦府）": true
+      }
+    };
+
+    function baseXY(coord) {
+      const lon = coord[0];
+      const lat = coord[1];
+      const base = [
+        50 + (lon - lonMin) / (lonMax - lonMin) * (W - 100),
+        35 + (latMax - lat) / (latMax - latMin) * (H - 85)
+      ];
+      return [
+        W / 2 + (base[0] - W / 2) * state.zoom,
+        H / 2 + (base[1] - H / 2) * state.zoom
+      ];
+    }
+    function xy(coord) {
+      const base = baseXY(coord);
+      return [base[0] + state.pan.x, base[1] + state.pan.y];
+    }
+    function path(coords, close) {
+      return coords.map((c, i) => {
+        const p = xy(c);
+        return `${i === 0 ? "M" : "L"}${p[0].toFixed(1)} ${p[1].toFixed(1)}`;
+      }).join(" ") + (close ? " Z" : "");
+    }
+    function el(name, attrs, parent) {
+      const node = document.createElementNS("http://www.w3.org/2000/svg", name);
+      for (const key in attrs) node.setAttribute(key, attrs[key]);
+      parent.appendChild(node);
+      return node;
+    }
+    function label(text, x, y, cls, parent, anchor) {
+      const node = el("text", {x, y, class: cls || "label"}, parent);
+      if (anchor) node.setAttribute("text-anchor", anchor);
+      node.textContent = text;
+      return node;
+    }
+
+    const svg = document.getElementById("map");
+    const grid = document.getElementById("grid");
+    const areas = document.getElementById("areas");
+    const roadLayer = document.getElementById("roads");
+    const distanceLayer = document.getElementById("distance-lines");
+    const pointLayer = document.getElementById("points");
+    const detail = document.getElementById("detail");
+    const zoomRange = document.getElementById("zoom-range");
+    const zoomValue = document.getElementById("zoom-value");
+    const typeControls = document.getElementById("type-controls");
+    const homeControls = document.getElementById("home-controls");
+    const distanceHome = document.getElementById("distance-home");
+    const distanceControls = document.getElementById("distance-controls");
+    const distanceList = document.getElementById("distance-list");
+    const showAllButton = document.getElementById("show-all");
+    const homesOnlyButton = document.getElementById("homes-only");
+    const resetButton = document.getElementById("reset-view");
+
+    function selectPoint(point, group) {
+      state.selectedPoint = point;
+      if (point.type === "home") {
+        state.selectedHome = point.name;
+        distanceHome.value = point.name;
+        renderDistances();
+      }
+      document.querySelectorAll(".marker").forEach(n => n.classList.remove("active"));
+      if (group) group.classList.add("active");
+      const analysis = point.type === "home" ? homeAnalysis[point.name] : null;
+      const listMarkup = (items, className) => `
+        <ul class="analysis-list ${className}">
+          ${items.map(item => `<li>${item}</li>`).join("")}
+        </ul>
+      `;
+      const analysisMarkup = analysis ? `
+        <div class="analysis-block">
+          <div class="analysis-heading">适合老人之处</div>
+          ${listMarkup(analysis.pros, "pros")}
+        </div>
+        <div class="analysis-block">
+          <div class="analysis-heading">可能的短板</div>
+          ${listMarkup(analysis.cons, "cons")}
+        </div>
+        <div class="analysis-block">
+          <div class="analysis-heading">现场重点核验</div>
+          ${listMarkup(analysis.check, "check")}
+        </div>
+      ` : `<div>${point.why}</div>`;
+      detail.innerHTML = `
+        <div class="detail-title">${point.name}</div>
+        <div class="detail-meta">${typeName[point.type]} · ${point.confidence}</div>
+        ${analysisMarkup}
+        <button class="detail-action" id="center-selected" type="button">将此点移到地图中心</button>
+      `;
+      document.getElementById("center-selected").addEventListener("click", () => centerPoint(point));
+    }
+
+    function centerPoint(point) {
+      const current = xy([point.lon, point.lat]);
+      state.pan.x += W / 2 - current[0];
+      state.pan.y += H / 2 - current[1];
+      renderMap();
+    }
+
+    function haversineKm(a, b) {
+      const rad = Math.PI / 180;
+      const dLat = (b.lat - a.lat) * rad;
+      const dLon = (b.lon - a.lon) * rad;
+      const lat1 = a.lat * rad;
+      const lat2 = b.lat * rad;
+      const h = Math.sin(dLat / 2) ** 2 + Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLon / 2) ** 2;
+      return 6371 * 2 * Math.asin(Math.sqrt(h));
+    }
+
+    function formatDistance(km) {
+      if (km < 0.1) return "< 0.1 km";
+      return `${km.toFixed(km < 1 ? 2 : 1)} km`;
+    }
+
+    function getSelectedHome() {
+      return points.find(point => point.type === "home" && point.name === state.selectedHome) || points.find(point => point.type === "home");
+    }
+
+    function renderDistances() {
+      const home = getSelectedHome();
+      if (!home) return;
+      const destinations = points
+        .filter(point => point.type !== "home" && state.distanceTypeVisible[point.type])
+        .map(point => ({point, km: haversineKm(home, point)}))
+        .sort((a, b) => a.km - b.km);
+      distanceList.innerHTML = destinations.map(({point, km}) => `
+        <div class="distance-row">
+          <span>${point.name}</span>
+          <strong>${formatDistance(km)}</strong>
+        </div>
+      `).join("") || `<div class="detail-meta">请至少勾选一个生活场景。</div>`;
+    }
+
+    function isVisible(point) {
+      if (!state.typeVisible[point.type]) return false;
+      if (point.type === "home" && !state.homeVisible[point.name]) return false;
+      return true;
+    }
+
+    function drawGrid() {
+      for (let lon = 126.015; lon <= 126.055; lon += 0.01) {
+        const a = xy([lon, latMin]);
+        const b = xy([lon, latMax]);
+        el("line", {x1:a[0], y1:a[1], x2:b[0], y2:b[1], class:"grid"}, grid);
+      }
+      for (let lat = 44.975; lat <= 45.000; lat += 0.005) {
+        const a = xy([lonMin, lat]);
+        const b = xy([lonMax, lat]);
+        el("line", {x1:a[0], y1:a[1], x2:b[0], y2:b[1], class:"grid"}, grid);
+      }
+    }
+
+    function renderMap() {
+      grid.innerHTML = "";
+      areas.innerHTML = "";
+      roadLayer.innerHTML = "";
+      distanceLayer.innerHTML = "";
+      pointLayer.innerHTML = "";
+      zoomValue.textContent = `${state.zoom.toFixed(2)}x`;
+
+      drawGrid();
+      if (state.typeVisible.park) {
+        el("path", {d:path(parkArea, true), class:"park-area"}, areas);
+        const zoneCenter = xy([126.0264,44.9893]);
+        const zoneEdgeX = xy([126.0310,44.9893]);
+        const zoneEdgeY = xy([126.0264,44.9916]);
+        el("ellipse", {
+          cx: zoneCenter[0],
+          cy: zoneCenter[1],
+          rx: Math.abs(zoneEdgeX[0] - zoneCenter[0]),
+          ry: Math.abs(zoneEdgeY[1] - zoneCenter[1]),
+          class: "zone"
+        }, areas);
+      }
+
+      el("path", {d:path(rail, false), class:"rail"}, roadLayer);
+      roads.forEach(r => {
+        el("path", {d:path(r.coords, false), class:"road"}, roadLayer);
+        const mid = xy(r.coords[Math.floor(r.coords.length / 2)]);
+        label(r.name, mid[0] + 8, mid[1] - 8, "road-label", roadLayer);
+      });
+
+      const selectedHome = getSelectedHome();
+      if (selectedHome) {
+        points
+          .filter(point => point.type !== "home" && state.typeVisible[point.type] && state.distanceTypeVisible[point.type])
+          .forEach(point => {
+            const a = xy([selectedHome.lon, selectedHome.lat]);
+            const b = xy([point.lon, point.lat]);
+            el("line", {
+              x1:a[0], y1:a[1], x2:b[0], y2:b[1],
+              class:"distance-line",
+              stroke:typeColor[point.type]
+            }, distanceLayer);
+          });
+      }
+
+      points.filter(isVisible).forEach((p, index) => {
+        const [x, y] = xy([p.lon, p.lat]);
+        const g = el("g", {
+          class: `marker ${p.confidence.includes("约略") || p.confidence.includes("推断") || p.confidence.includes("方向") ? "approx" : ""} ${p.name === state.selectedHome ? "selected-home" : ""}`,
+          transform:`translate(${x} ${y})`
+        }, pointLayer);
+        el("circle", {r: p.type === "home" ? 8 : 7, fill:typeColor[p.type]}, g);
+        el("circle", {r: 20, fill:"transparent"}, g);
+        const text = label(p.name, 12, 5, "label", g);
+        if (index % 5 === 3) text.setAttribute("y", -12);
+        g.addEventListener("click", () => selectPoint(p, g));
+      });
+    }
+
+    function addCheckbox(parent, labelText, checked, onChange) {
+      const labelNode = document.createElement("label");
+      labelNode.className = "check-row";
+      const input = document.createElement("input");
+      input.type = "checkbox";
+      input.checked = checked;
+      input.addEventListener("change", () => onChange(input.checked));
+      const span = document.createElement("span");
+      span.textContent = labelText;
+      labelNode.append(input, span);
+      parent.appendChild(labelNode);
+      return input;
+    }
+
+    Object.entries(typeName).forEach(([type, labelText]) => {
+      addCheckbox(typeControls, labelText, state.typeVisible[type], checked => {
+        state.typeVisible[type] = checked;
+        renderMap();
+      });
+    });
+
+    Object.keys(state.homeVisible).forEach(name => {
+      addCheckbox(homeControls, name, state.homeVisible[name], checked => {
+        state.homeVisible[name] = checked;
+        renderMap();
+      });
+    });
+
+    Object.keys(state.homeVisible).forEach(name => {
+      const option = document.createElement("option");
+      option.value = name;
+      option.textContent = name;
+      distanceHome.appendChild(option);
+    });
+    distanceHome.value = state.selectedHome;
+    distanceHome.addEventListener("change", () => {
+      state.selectedHome = distanceHome.value;
+      renderDistances();
+      renderMap();
+    });
+
+    ["daily", "park", "school", "transit", "health", "landmark"].forEach(type => {
+      addCheckbox(distanceControls, typeName[type], state.distanceTypeVisible[type], checked => {
+        state.distanceTypeVisible[type] = checked;
+        renderDistances();
+        renderMap();
+      });
+    });
+
+    zoomRange.addEventListener("input", () => {
+      state.zoom = Number(zoomRange.value);
+      renderMap();
+    });
+
+    showAllButton.addEventListener("click", () => {
+      Object.keys(state.typeVisible).forEach(type => state.typeVisible[type] = true);
+      Object.keys(state.homeVisible).forEach(name => state.homeVisible[name] = true);
+      document.querySelectorAll("#type-controls input, #home-controls input").forEach(input => input.checked = true);
+      renderMap();
+    });
+
+    homesOnlyButton.addEventListener("click", () => {
+      Object.keys(state.typeVisible).forEach(type => state.typeVisible[type] = type === "home");
+      Object.keys(state.homeVisible).forEach(name => state.homeVisible[name] = true);
+      document.querySelectorAll("#type-controls input").forEach((input, index) => {
+        const type = Object.keys(typeName)[index];
+        input.checked = state.typeVisible[type];
+      });
+      document.querySelectorAll("#home-controls input").forEach(input => input.checked = true);
+      renderMap();
+    });
+
+    resetButton.addEventListener("click", () => {
+      state.zoom = 1;
+      state.pan = {x: 0, y: 0};
+      zoomRange.value = "1";
+      renderMap();
+    });
+
+    let drag = null;
+    function clientToViewBox(event) {
+      const rect = svg.getBoundingClientRect();
+      return {
+        x: (event.clientX - rect.left) * W / rect.width,
+        y: (event.clientY - rect.top) * H / rect.height
+      };
+    }
+    svg.addEventListener("pointerdown", event => {
+      if (event.target.closest && event.target.closest(".marker")) return;
+      const point = clientToViewBox(event);
+      drag = {start: point, pan: {...state.pan}, pointerId: event.pointerId};
+      svg.classList.add("is-dragging");
+      svg.setPointerCapture(event.pointerId);
+    });
+    svg.addEventListener("pointermove", event => {
+      if (!drag || drag.pointerId !== event.pointerId) return;
+      const point = clientToViewBox(event);
+      state.pan.x = drag.pan.x + point.x - drag.start.x;
+      state.pan.y = drag.pan.y + point.y - drag.start.y;
+      renderMap();
+    });
+    function endDrag(event) {
+      if (!drag || drag.pointerId !== event.pointerId) return;
+      drag = null;
+      svg.classList.remove("is-dragging");
+      if (svg.hasPointerCapture(event.pointerId)) svg.releasePointerCapture(event.pointerId);
+    }
+    svg.addEventListener("pointerup", endDrag);
+    svg.addEventListener("pointercancel", endDrag);
+
+    renderMap();
+    selectPoint(points[0], document.querySelector(".marker"));
+    renderDistances();
+  </script>
+</body>
+</html>
